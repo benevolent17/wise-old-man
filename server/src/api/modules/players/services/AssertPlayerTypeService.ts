@@ -1,11 +1,11 @@
 import { AsyncResult, complete, errored, isComplete, isErrored } from '@attio/fetchable';
 import prisma from '../../../../prisma';
-import { fetchHiscoresJSON, HiscoresError } from '../../../../services/jagex.service';
+import { fetchGimMembers, fetchHiscoresJSON, HiscoresError } from '../../../../services/jagex.service';
 import { Player, PlayerType } from '../../../../types';
 import { eventEmitter, EventType } from '../../../events';
 import { buildHiscoresSnapshot } from '../../snapshots/services/BuildHiscoresSnapshot';
 
-async function assertPlayerType(player: Player): AsyncResult<
+async function assertPlayerType(player: Player, groupName?: string): AsyncResult<
   | {
       type: PlayerType;
       changed: false;
@@ -17,6 +17,43 @@ async function assertPlayerType(player: Player): AsyncResult<
     },
   HiscoresError
 > {
+  const gimName = groupName ?? player.gimName
+  if(gimName){
+    const gimMembers = await fetchGimMembers(gimName)
+
+    if (isErrored(gimMembers)) {
+      return errored(gimMembers.error);
+    }
+
+    if(gimMembers.value.includes(player.username) && player.type === "gim"){
+      return complete({
+        type: "gim",
+        changed: false
+      });
+    } else if(gimMembers.value.includes(player.username.toLocaleLowerCase())){
+      const updatedPlayer = await prisma.player.update({
+        where: {
+          id: player.id
+        },
+        data: {
+          type: "gim",
+          gimName
+        }
+      });
+
+      eventEmitter.emit(EventType.PLAYER_TYPE_CHANGED, {
+        username: player.username,
+        previousType: player.type,
+        newType: "gim"
+      });
+
+      return complete({
+        changed: true,
+        updatedPlayer,
+        type: "gim"
+      });
+    }
+  }
   const confirmedTypeResult = await checkType(player.username);
 
   if (isErrored(confirmedTypeResult)) {

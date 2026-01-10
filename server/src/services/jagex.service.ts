@@ -66,6 +66,7 @@ export function getBaseHiscoresUrl(type: PlayerType = PlayerType.REGULAR) {
   switch (type) {
     case PlayerType.UNKNOWN:
     case PlayerType.REGULAR:
+    case PlayerType.GIM:
       return `https://services.runescape.com/m=hiscore_oldschool/index_lite.json`;
     case PlayerType.IRONMAN:
       return `https://services.runescape.com/m=hiscore_oldschool_ironman/index_lite.json`;
@@ -148,6 +149,76 @@ export async function fetchHiscoresJSON(
     }
 
     return complete(parsedHiscores.data);
+  }
+
+  const result = await retry(retriedFunction);
+
+  if (isComplete(result)) {
+    return result;
+  }
+
+  const parsedError = HiscoresErrorSchema.safeParse(result.error);
+
+  if (parsedError.success) {
+    return errored(parsedError.data);
+  }
+
+  return errored({
+    code: 'HISCORES_UNEXPECTED_ERROR',
+    subError: result.error
+  } as const);
+}
+
+export async function fetchGimMembers(
+  group: string,
+): AsyncResult<any[], HiscoresError> {
+  async function retriedFunction(): AsyncResult<any[], HiscoresError> {
+    const stopTrackingTimer = prometheus.trackJagexServiceRequest();
+
+    const fetchResult = await fetchWithProxy(`https://services.runescape.com/m=hiscore_oldschool_ironman/group-ironman/view-group?name=${group}`);
+
+    stopTrackingTimer({
+      service: 'OSRS Hiscores (JSON)',
+      status: isErrored(fetchResult) ? 0 : 1
+    });
+
+    if (isErrored(fetchResult)) {
+      // If it's a proxy error, we throw it so that it can be retried with other proxies
+      if (fetchResult.error.code === 'PROXY_ERROR') {
+        throw fetchResult.error;
+      }
+
+      const axiosError = fetchResult.error.subError;
+
+      if ('response' in axiosError && axiosError.response?.status === 404) {
+        return errored({
+          code: 'HISCORES_USERNAME_NOT_FOUND'
+        } as const);
+      }
+
+      logger.error('Unexpected hiscores error', fetchResult.error);
+
+      return errored({
+        code: 'HISCORES_UNEXPECTED_ERROR',
+        subError: fetchResult.error.subError
+      } as const);
+    }
+
+    if (!fetchResult.value) {
+      return errored({ code: 'HISCORES_SERVICE_UNAVAILABLE' } as const);
+    }
+    
+    const groupFound = !(fetchResult.value as string).match("Unable to find group");
+    const groupMembers: any[] = []
+    if(groupFound){
+      const matches = (fetchResult.value as string).matchAll(/user1=(.*?)'/g)
+      const matchIter = [...matches]
+      matchIter.forEach(match =>{
+        groupMembers.push(match[1].toLocaleLowerCase().replaceAll("�", " "))
+      })
+    }
+
+    return complete(groupMembers);
   }
 
   const result = await retry(retriedFunction);

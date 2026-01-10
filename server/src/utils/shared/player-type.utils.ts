@@ -5,7 +5,8 @@ export const PlayerTypeProps: Record<PlayerType, { name: string }> = {
   [PlayerType.REGULAR]: { name: 'Regular' },
   [PlayerType.IRONMAN]: { name: 'Ironman' },
   [PlayerType.HARDCORE]: { name: 'Hardcore' },
-  [PlayerType.ULTIMATE]: { name: 'Ultimate' }
+  [PlayerType.ULTIMATE]: { name: 'Ultimate' },
+  [PlayerType.GIM]: { name: 'Gim' }
 };
 
 export function isPlayerType(typeString: string): typeString is PlayerType {

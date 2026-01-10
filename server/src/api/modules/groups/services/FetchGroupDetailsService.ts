@@ -32,7 +32,7 @@ async function fetchGroupDetails(id: number): Promise<{
   return {
     group,
     memberCount: group.memberships.length,
-    socialLinks: group.socialLinks[0] ?? buildDefaultSocialLinks(group.id),
+    socialLinks: group.socialLinks ? group.socialLinks[0] : buildDefaultSocialLinks(group.id),
     roleOrders: group.roleOrders,
     // Sort the members list by role
     memberships: sortMembers(

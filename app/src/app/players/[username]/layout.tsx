@@ -32,6 +32,7 @@ import {
 import OverflowIcon from "~/assets/overflow.svg";
 import ExternalIcon from "~/assets/external.svg";
 import WarningFilledIcon from "~/assets/warning_filled.svg";
+import { PlayerGimForm } from "~/components/players/PlayerGimForm";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -117,6 +118,7 @@ function Header(props: PlayerDetailsResponse) {
                   <DropdownMenuItem>Submit name change</DropdownMenuItem>
                 </QueryLink>
                 <AssertPlayerTypeForm player={props} />
+                <PlayerGimForm player={props} />
               </DropdownMenuContent>
             </DropdownMenu>
           </>
