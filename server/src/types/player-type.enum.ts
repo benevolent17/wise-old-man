@@ -3,7 +3,8 @@ export const PlayerType = {
   REGULAR: 'regular',
   IRONMAN: 'ironman',
   HARDCORE: 'hardcore',
-  ULTIMATE: 'ultimate'
+  ULTIMATE: 'ultimate',
+  GIM: 'gim'
 } as const;
 
 export type PlayerType = (typeof PlayerType)[keyof typeof PlayerType];

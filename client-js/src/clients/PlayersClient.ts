@@ -42,8 +42,8 @@ export default class PlayersClient extends BaseAPIClient {
    * Asserts (and attempts to fix, if necessary) a player's game-mode type.
    * @returns The updated player, and an indication of whether the type was changed.
    */
-  assertPlayerType(username: string) {
-    return this.postRequest<{ player: PlayerResponse; changed: boolean }>(`/players/${username}/assert-type`);
+  assertPlayerType(username: string, gimName?: string) {
+    return this.postRequest<{ player: PlayerResponse; changed: boolean }>(`/players/${username}/assert-type`, { gimName });
   }
 
   /**

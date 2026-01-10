@@ -207,10 +207,14 @@ router.post(
   validateRequest({
     params: z.object({
       username: z.string()
+    }),
+    body: z.object({
+      gimName: z.optional(z.string())
     })
   }),
   executeRequest(async (req, res) => {
     const { username } = req.params;
+    const { gimName } = req.body;
 
     const player = await prisma.player.findFirst({
       where: { username: standardize(username) }
@@ -220,7 +224,7 @@ router.post(
       throw new NotFoundError('Player not found.');
     }
 
-    const assertionResult = await assertPlayerType(player);
+    const assertionResult = await assertPlayerType(player, gimName);
 
     if (isErrored(assertionResult)) {
       throw new ServerError('Failed to assert player type.');

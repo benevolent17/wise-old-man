@@ -23,4 +23,5 @@ export interface Player {
   lastImportedAt: Date | null;
   latestSnapshotId: number | null;
   latestSnapshotDate: Date | null;
+  gimName: string | null
 }
